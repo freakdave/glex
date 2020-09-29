@@ -24,3 +24,7 @@ cmake_install.cmake
 /deps/dc/nsound/arm/prog.elf
 /deps/dc/nsound/arm/nstream.drv
 
+*.vcxproj
+*.filters
+*.user
+*.sln
