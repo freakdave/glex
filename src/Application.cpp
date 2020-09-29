@@ -6,17 +6,22 @@ void Application::_reshapeFrustum(int width, int height) {
     GLfloat h = (GLfloat)height / (GLfloat)width;
     GLfloat xmax, znear, zfar;
 
-    znear = 5.0f;
-    zfar  = 30.0f;
+    znear = 0.1f;
+    zfar  = 500.0f;
     xmax  = znear * 0.5f;
 
     glViewport(0, 0, (GLint) width, (GLint) height);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     glFrustum(-xmax, xmax, -xmax * h, xmax * h, znear, zfar);
+}
+
+// TODO: write dedicated camera class
+void Application::translateFrustum(float x, float y, float z)
+{
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-    glTranslatef(0.5, 0.5, -20.0);
+    glTranslatef(x, y, z);
 }
 
 void Application::_reshapeOrtho(int width, int height) {

@@ -24,6 +24,7 @@ public:
     void closeWindow();
     void reshapeFrustum();
     void reshapeOrtho(float scale);
+    void translateFrustum(float x, float y, float z);
     void clear();
     void swapBuffers();
     int windowShouldClose();

@@ -17,107 +17,127 @@ std::chrono::steady_clock::time_point currentTime = std::chrono::steady_clock::n
 std::chrono::steady_clock::time_point lastTime = std::chrono::steady_clock::now();
 uint16_t timeDiff = 0;
 uint16_t nbFrames = 0;
-float frameTime = 0.0;
+float frameTime = 0.0f;
+float deltaTime = 0.0f;
 uint16_t fps = 0;
 
+
+float camX = 0.0f;
+float camZ = -20.0f;
+
+
 /* program entry */
-int main(int argc, char *argv[]) {
-    DEBUG_PRINTLN("Application started!");
-    int width = 640;
-    int height = 480;
-    Application app;
-    app.createWindow("GLEX Playground", width, height);
+int main(int argc, char* argv[]) {
+	DEBUG_PRINTLN("Application started!");
+	int width = 640;
+	int height = 480;
+	Application app;
+	app.createWindow("GLEX Playground", width, height);
 
-    // Basic keyboard handling
-    int lastKeyCode = -1;
-    KeyboardInputHandler keyboard;
-    keyboard.registerCallback([&app, &lastKeyCode](KeyCode code) {
-        lastKeyCode = code;
+	// Basic keyboard handling
+	int lastKeyCode = -1;
+	KeyboardInputHandler keyboard;
+	keyboard.registerCallback([&app, &lastKeyCode](KeyCode code) {
+		lastKeyCode = code;
 
-        // Exit the application when escape key is pressed
-        if (code == KeyCode::Escape) {
-            DEBUG_PRINTLN("Escape pressed");
-            app.closeWindow();
-        }
-    });
-    app.addInputHandler(&keyboard);
+		switch (code)
+		{
+			// Exit the application when escape key is pressed
+		case KeyCode::Escape:
+			DEBUG_PRINTLN("Escape pressed");
+			app.closeWindow();
+			break;
 
-    // NOTE: Both Image and Mesh classes can use textures loaded from JPG, PNG, or BMP.
-    //       All PNG files have been run through pngcrush.
-    //
-    //       I have not yet done profiling to determine the performance and memory 
-    //       implications of using each file format. However keep in mind that only PNG
-    //       fully supports RGBA as the others do not have alpha channels. The below test
-    //       code demostrates loading all 3 types. You can also change the extensions to 
-    //       try the other formats yourself for testing/profiling. 
-    //
-    //       In my limited testing with dcload only, the file size seems to have a much larger
-    //       impact on loading time than the format. So I found JPG files load significantly
-    //       faster than either PNG or BMP with no noticeable loss in quality (though no alpha).
+		case KeyCode::Down:
+			camZ -= 10 * deltaTime;
+			break;
 
-    Texture grayBrickTexture;
-    grayBrickTexture.loadRGB("images/gray_brick_512.jpg");
-    Image grayBrickImage(&grayBrickTexture, 0, (float)app.windowHeight(), Image::Z_BACKGROUND, (float)app.windowWidth(), (float)app.windowHeight(), app.screenScale);
+		case KeyCode::Up:
+			camZ += 10 * deltaTime;
+			break;
+		}
 
-    Texture woodTexture;
-    woodTexture.loadRGB("images/wood1.bmp");
-    Image woodImage(&woodTexture, 250, 420, 10, Image::Z_HUD, 100, app.screenScale);
+		});
+	app.addInputHandler(&keyboard);
 
-    MeshData *houseMesh = MeshLoader::loadObjMesh("meshes/house.obj");
-    Texture houseTexture;
-    houseTexture.loadRGBA("images/house_512.png");
-    Mesh mesh(houseMesh, &houseTexture, 0.3f);
+	// NOTE: Both Image and Mesh classes can use textures loaded from JPG, PNG, or BMP.
+	//       All PNG files have been run through pngcrush.
+	//
+	//       I have not yet done profiling to determine the performance and memory 
+	//       implications of using each file format. However keep in mind that only PNG
+	//       fully supports RGBA as the others do not have alpha channels. The below test
+	//       code demostrates loading all 3 types. You can also change the extensions to 
+	//       try the other formats yourself for testing/profiling. 
+	//
+	//       In my limited testing with dcload only, the file size seems to have a much larger
+	//       impact on loading time than the format. So I found JPG files load significantly
+	//       faster than either PNG or BMP with no noticeable loss in quality (though no alpha).
 
-    FontColor darkBlue{21, 1, 148};
-    FontFace fontFace = app.screenScale > 1.0 ? FontFace::arial_28 : FontFace::arial_16;
-    Text fpsCounter(fontFace, "", darkBlue, 20, 20, Image::Z_HUD, app.screenScale);
-    fpsCounter.createTexture();
+	Texture grayBrickTexture;
+	grayBrickTexture.loadRGB("images/gray_brick_512.jpg");
+	Image grayBrickImage(&grayBrickTexture, 0, (float)app.windowHeight(), Image::Z_BACKGROUND, (float)app.windowWidth(), (float)app.windowHeight(), app.screenScale);
 
-    // Main loop
-    while (!app.windowShouldClose()) {
-        // Measure speed
-        nbFrames++;
-        currentTime = std::chrono::steady_clock::now();
-        timeDiff = (uint16_t)std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - lastTime).count();
-        if (timeDiff >= 1000) {
-            frameTime = float(timeDiff) / float(nbFrames);
-            fps = nbFrames;
-            nbFrames = 0;
-            lastTime = currentTime;
-        }
+	Texture woodTexture;
+	woodTexture.loadRGB("images/wood1.bmp");
+	Image woodImage(&woodTexture, 250, 420, 10, Image::Z_HUD, 100, app.screenScale);
 
-        // Handle input
-        app.handleInput();
+	MeshData* houseMesh = MeshLoader::loadObjMesh("meshes/house.obj");
+	Texture houseTexture;
+	houseTexture.loadRGBA("images/house_512.png");
+	Mesh mesh(houseMesh, &houseTexture, 0.3f);
 
-        // Clear the buffer to draw the prepare frame
-        app.clear();
+	FontColor darkBlue{ 21, 1, 148 };
+	FontFace fontFace = app.screenScale > 1.0 ? FontFace::arial_28 : FontFace::arial_16;
+	Text fpsCounter(fontFace, "", darkBlue, 20, 20, Image::Z_HUD, app.screenScale);
+	fpsCounter.createTexture();
 
-        // Draw the background image
-        app.reshapeOrtho(1.0);        
-        grayBrickImage.draw();
+	// Main loop
+	while (!app.windowShouldClose()) {
+		// Measure speed
+		nbFrames++;
+		currentTime = std::chrono::steady_clock::now();
+		timeDiff = (uint16_t)std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - lastTime).count();
+		if (timeDiff >= 1000) {
+			frameTime = float(timeDiff) / float(nbFrames);
+			deltaTime = frameTime * 0.001f;
+			fps = nbFrames;
+			nbFrames = 0;
+			lastTime = currentTime;
+		}
 
-        // Draw the 3d rotating house
-        app.reshapeFrustum();
-        mesh.draw();
-        mesh.rotationX += 0.75;
-        mesh.rotationY += 0.75;
-        mesh.rotationZ += 0.75;
+		// Handle input
+		app.handleInput();
 
-        // Draw the foreground 2d image
-        app.reshapeOrtho(1.0);
-        woodImage.draw();
+		// Clear the buffer to draw the prepare frame
+		app.clear();
 
-        // Draw the FPS counter HUD text
-        app.reshapeOrtho(fpsCounter.scale);
-        static char outputString[50];
-        // NOTE: Due to an old GCC bug, we must manually cast floats to double in order to use %f without a warning 
-        snprintf(&outputString[0], 50, "frame time: %.2f ms  fps: %.2f  key: %d", (double)frameTime, (double)fps, lastKeyCode);
-        fpsCounter.text = outputString;
-        fpsCounter.draw();
+		// Draw the background image
+		app.reshapeOrtho(1.0);
+		grayBrickImage.draw();
 
-        // Swap buffers to display the current frame
-        app.swapBuffers();
-    }
+		// Draw the 3d rotating house
+		app.reshapeFrustum();
+		app.translateFrustum(0.5f, 0.5f, camZ);
+		mesh.draw();
+		mesh.rotationX += 0.75;
+		mesh.rotationY += 0.75;
+		mesh.rotationZ += 0.75;
 
-    app.closeWindow();
+		// Draw the foreground 2d image
+		app.reshapeOrtho(1.0);
+		woodImage.draw();
+
+		// Draw the FPS counter HUD text
+		app.reshapeOrtho(fpsCounter.scale);
+		static char outputString[50];
+		// NOTE: Due to an old GCC bug, we must manually cast floats to double in order to use %f without a warning 
+		snprintf(&outputString[0], 50, "frame time: %.2f ms  fps: %.2f  key: %d", (double)frameTime, (double)fps, lastKeyCode);
+		fpsCounter.text = outputString;
+		fpsCounter.draw();
+
+		// Swap buffers to display the current frame
+		app.swapBuffers();
+	}
+
+	app.closeWindow();
 }
