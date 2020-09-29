@@ -18,7 +18,7 @@ void Application::createWindow(std::string windowName, int width, int height) {
     }
 
     glfwWindowHint(GLFW_DEPTH_BITS, 16);
-    glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_TRUE);
+    glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_FALSE);
 
     _window = glfwCreateWindow(width, height, _windowName.c_str(), NULL, NULL);
     if (!_window) {
