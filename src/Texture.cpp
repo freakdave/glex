@@ -119,6 +119,7 @@ bool Texture::loadExisting(GLsizei textureWidth, GLsizei textureHeight, GLuint t
 
 void Texture::unload() {
     if (isLoaded()) {
+        DEBUG_PRINTLN("Unloading texture : %d", id);
         glDeleteTextures(1, &id);
         id = 0;
     }
