@@ -45,7 +45,8 @@ int main(int argc, char* argv[]) {
 			// Exit the application when escape key is pressed
 		case KeyCode::Escape:
 			DEBUG_PRINTLN("Escape pressed");
-			app.closeWindow();
+			app.setWindowShouldClose();
+			//app.closeWindow();
 			break;
 
 		case KeyCode::Down:
@@ -138,6 +139,8 @@ int main(int argc, char* argv[]) {
 		// Swap buffers to display the current frame
 		app.swapBuffers();
 	}
+
+	// TODO: Do any possible cleanups here
 
 	app.closeWindow();
 }
