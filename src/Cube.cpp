@@ -11,9 +11,9 @@ void Cube::draw() {
     glRotatef(_anglez, 0.0f, 0.0f, 1.0f);
     glRotatef(_angley, 0.0f, 1.0f, 0.0f);
     glRotatef(_anglex, 1.0f, 0.0f, 0.0f);
-    
+
     glScalef(3.0, 3.0, 3.0);
-    
+
     _drawList();
     glPopMatrix();
 
@@ -29,7 +29,7 @@ void Cube::_drawList() {
         glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
         glBindTexture(GL_TEXTURE_2D, texture->id);
     }
-    
+
     // cube ///////////////////////////////////////////////////////////////////////
     //    v7----- v4
     //   /|      /|
@@ -39,19 +39,19 @@ void Cube::_drawList() {
     //  |/      |/
     //  v2------v1
 
-    GLfloat v0[3] = {  1.0f,  1.0f,  1.0f };
-    GLfloat v1[3] = {  1.0f, -1.0f,  1.0f };
+    GLfloat v0[3] = { 1.0f,  1.0f,  1.0f };
+    GLfloat v1[3] = { 1.0f, -1.0f,  1.0f };
     GLfloat v2[3] = { -1.0f, -1.0f,  1.0f };
     GLfloat v3[3] = { -1.0f,  1.0f,  1.0f };
-    GLfloat v4[3] = {  1.0f,  1.0f, -1.0f };
-    GLfloat v5[3] = {  1.0f, -1.0f, -1.0f };
+    GLfloat v4[3] = { 1.0f,  1.0f, -1.0f };
+    GLfloat v5[3] = { 1.0f, -1.0f, -1.0f };
     GLfloat v6[3] = { -1.0f, -1.0f, -1.0f };
     GLfloat v7[3] = { -1.0f,  1.0f, -1.0f };
 
     glBegin(GL_QUADS);  // draw a cube with 6 quads
 
     if (texture == NULL) {
-        glColor3f(1.0, 0.0, 0.0); 
+        glColor3f(1.0, 0.0, 0.0);
         glVertex3fv(v0);    // front face
         glVertex3fv(v3);
         glVertex3fv(v2);
@@ -69,7 +69,7 @@ void Cube::_drawList() {
         glVertex3fv(v6);
         glVertex3fv(v2);
 
-        glColor3f(1.0, 0.0, 0.0); 
+        glColor3f(1.0, 0.0, 0.0);
         glVertex3fv(v4);    // back face
         glVertex3fv(v7);
         glVertex3fv(v6);
@@ -88,10 +88,11 @@ void Cube::_drawList() {
         glVertex3fv(v1);
 
         glEnd();
-    } else {
-        glNormal3f(0, 0, 1); 
+    }
+    else {
+        glNormal3f(0, 0, 1);
 
-        glColor3f(1.0, 1.0, 1.0); 
+        glColor3f(1.0, 1.0, 1.0);
         glTexCoord2f(0, 0);
         glVertex3fv(v0);    // front face
         glTexCoord2f(1, 0);

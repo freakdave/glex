@@ -19,17 +19,17 @@
 
 #ifdef DREAMCAST
 extern "C" {
-    #include "perfctr.h"
+#include "perfctr.h"
 }
 #define PERF_COUNTER_WHICH 1
-    // No idea why the values are different depending on the GCC version, but it seems the counter is slightly slower on GCC 4 builds
-    #if __GNUC__ > 4 && !defined(__clang__)
-    // 1,000,000 ms in a ns, each count is approx 6.08333ns, so divide by (1,000,000 / 6.08333) = ~164,383 to get the ms
-    #define PERF_COUNTER_NS_TO_MS 164383ULL
-    #else
-    // 1,000,000 ms in a ns, each count is approx 5.83333ns, so divide by (1,000,000 / 5.83333) = ~171,428 to get the ms
-    #define PERF_COUNTER_NS_TO_MS 171428ULL
-    #endif
+// No idea why the values are different depending on the GCC version, but it seems the counter is slightly slower on GCC 4 builds
+#if __GNUC__ > 4 && !defined(__clang__)
+// 1,000,000 ms in a ns, each count is approx 6.08333ns, so divide by (1,000,000 / 6.08333) = ~164,383 to get the ms
+#define PERF_COUNTER_NS_TO_MS 164383ULL
+#else
+// 1,000,000 ms in a ns, each count is approx 5.83333ns, so divide by (1,000,000 / 5.83333) = ~171,428 to get the ms
+#define PERF_COUNTER_NS_TO_MS 171428ULL
+#endif
 #endif
 
 // Silence annoying printf float warning on Dreamcast 
@@ -58,7 +58,7 @@ void cleanExit(Application* app) {
 }
 
 /* program entry */
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
     DEBUG_PRINTLN("Application started!");
     int width = 640;
     int height = 480;
@@ -75,10 +75,11 @@ int main(int argc, char *argv[]) {
         if (code == KeyCode::Escape) {
             DEBUG_PRINTLN("Escape pressed");
             cleanExit(&app);
-        } else if (code == KeyCode::A) {
+        }
+        else if (code == KeyCode::A) {
             DEBUG_PRINTLN("A keyboard key pressed");
         }
-    });
+        });
     app.addInputHandler(std::shared_ptr<KeyboardInputHandler>(&keyboard));
 
     // Basic mouse handling
@@ -89,7 +90,7 @@ int main(int argc, char *argv[]) {
         if (mouseState.posDeltaX != 0.0 || mouseState.posDeltaY != 0.0) {
             DEBUG_PRINTLN("Mouse moved - pos: (x: %f, y: %f) delta: (dX: %f, dY: %f)", mouseState.posX, mouseState.posY, mouseState.posDeltaX, mouseState.posDeltaY);
         }
-        
+
         // Check if mouse scrolled
         if (mouseState.scrollDeltaX != 0.0 || mouseState.scrollDeltaY != 0.0) {
             DEBUG_PRINTLN("Mouse scrolled - delta: (dX: %f, dY: %f)", mouseState.scrollDeltaX, mouseState.scrollDeltaY);
@@ -119,7 +120,7 @@ int main(int argc, char *argv[]) {
 
         // Store last state
         lastMouseState = mouseState;
-    });
+        });
     app.addInputHandler(std::shared_ptr<MouseInputHandler>(&mouse));
 
     // Basic gamepad handling
@@ -216,7 +217,7 @@ int main(int argc, char *argv[]) {
         if (lastGamepad1State.analog[GamepadAnalog::L_STICK_X] != gamepadState.analog[GamepadAnalog::L_STICK_X] || lastGamepad1State.analog[GamepadAnalog::L_STICK_Y] != gamepadState.analog[GamepadAnalog::L_STICK_Y]) {
             DEBUG_PRINTLN("Left Stick: (x: %f, y: %f)", gamepadState.analog[GamepadAnalog::L_STICK_X], gamepadState.analog[GamepadAnalog::L_STICK_Y]);
         }
-         if (lastGamepad1State.analog[GamepadAnalog::R_STICK_X] != gamepadState.analog[GamepadAnalog::R_STICK_X] || lastGamepad1State.analog[GamepadAnalog::R_STICK_Y] != gamepadState.analog[GamepadAnalog::R_STICK_Y]) {
+        if (lastGamepad1State.analog[GamepadAnalog::R_STICK_X] != gamepadState.analog[GamepadAnalog::R_STICK_X] || lastGamepad1State.analog[GamepadAnalog::R_STICK_Y] != gamepadState.analog[GamepadAnalog::R_STICK_Y]) {
             DEBUG_PRINTLN("Right Stick: (x: %f, y: %f)", gamepadState.analog[GamepadAnalog::R_STICK_X], gamepadState.analog[GamepadAnalog::R_STICK_Y]);
         }
         if (lastGamepad1State.analog[GamepadAnalog::L_TRIGGER] != gamepadState.analog[GamepadAnalog::L_TRIGGER]) {
@@ -234,7 +235,7 @@ int main(int argc, char *argv[]) {
             DEBUG_PRINTLN("L + R + Start pressed!");
             cleanExit(&app);
         }
-    });
+        });
     app.addInputHandler(std::shared_ptr<GamepadInputHandler>(&gamepad1));
 
     // NOTE: Both Image and Mesh classes can use textures loaded from JPG, PNG, or BMP.
@@ -260,14 +261,14 @@ int main(int argc, char *argv[]) {
 
     Triangle triangle(250, 220, 10, Image::Z_HUD, 100, app.screenScale);
 
-    MeshData *houseMesh = MeshLoader::loadObjMesh("meshes/house.obj");
+    MeshData* houseMesh = MeshLoader::loadObjMesh("meshes/house.obj");
     Texture houseTexture;
     houseTexture.loadRGBA("images/house_512.png");
     Mesh mesh(houseMesh, &houseTexture, 0.3f);
 
     Cube cube;
 
-    FontColor darkBlue{21, 1, 148};
+    FontColor darkBlue{ 21, 1, 148 };
     FontFace fontFace = app.screenScale > 1.0 ? FontFace::arial_28 : FontFace::arial_16;
     Text fpsCounter(fontFace, "", darkBlue, 20, 20, Image::Z_HUD, app.screenScale);
     fpsCounter.createTexture();
@@ -310,7 +311,7 @@ int main(int argc, char *argv[]) {
         app.clear();
 
         // Draw the background image
-        app.reshapeOrtho(1.0);        
+        app.reshapeOrtho(1.0);
         grayBrickImage.draw();
 
         // Draw the 3d rotating house
