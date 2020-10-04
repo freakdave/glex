@@ -7,140 +7,276 @@
 #include "glex/Text.h"
 #include "glex/MeshLoader.h"
 #include "glex/input/KeyboardInputHandler.h"
+#include "glex/input/MouseInputHandler.h"
+#include "glex/input/GamepadInputHandler.h"
 
 #include <stdio.h>
 #include <cstdlib>
 #include <string>
 #include <chrono>
 
+// Silence annoying printf float warning on Dreamcast 
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic ignored "-Wformat"
+#endif
+
 std::chrono::steady_clock::time_point currentTime = std::chrono::steady_clock::now();
 std::chrono::steady_clock::time_point lastTime = std::chrono::steady_clock::now();
 uint16_t timeDiff = 0;
 uint16_t nbFrames = 0;
-float frameTime = 0.0f;
-float deltaTime = 0.0f;
+float frameTime = 0.0;
 uint16_t fps = 0;
 
-
-float camX = 0.0f;
-float camZ = -20.0f;
-
-
 /* program entry */
-int main(int argc, char* argv[]) {
-	DEBUG_PRINTLN("Application started!");
-	int width = 640;
-	int height = 480;
-	Application app;
-	app.createWindow("GLEX Playground", width, height);
+int main(int argc, char *argv[]) {
+    DEBUG_PRINTLN("Application started!");
+    int width = 640;
+    int height = 480;
+    Application app;
+    app.createWindow("GLEX Playground", width, height);
 
-	// Basic keyboard handling
-	int lastKeyCode = -1;
-	KeyboardInputHandler keyboard;
-	keyboard.registerCallback([&app, &lastKeyCode](KeyCode code) {
-		lastKeyCode = code;
+    // Basic keyboard handling
+    int lastKeyCode = -1;
+    KeyboardInputHandler keyboard;
+    keyboard.registerCallback([&app, &lastKeyCode](KeyCode code) {
+        lastKeyCode = code;
 
-		switch (code)
-		{
-			// Exit the application when escape key is pressed
-		case KeyCode::Escape:
-			DEBUG_PRINTLN("Escape pressed");
-			app.setWindowShouldClose();
-			//app.closeWindow();
-			break;
+        // Exit the application when escape key is pressed
+        if (code == KeyCode::Escape) {
+            DEBUG_PRINTLN("Escape pressed");
+            app.closeWindow();
+        } else if (code == KeyCode::A) {
+            DEBUG_PRINTLN("A keyboard key pressed");
+        }
+    });
+    app.addInputHandler(std::shared_ptr<KeyboardInputHandler>(&keyboard));
 
-		case KeyCode::Down:
-			camZ -= 10 * deltaTime;
-			break;
+    // Basic mouse handling
+    MouseState lastMouseState;
+    MouseInputHandler mouse;
+    mouse.registerRawStateCallback([&lastMouseState](MouseState mouseState) {
+        // Check if mouse moved
+        if (mouseState.posDeltaX != 0.0 || mouseState.posDeltaY != 0.0) {
+            DEBUG_PRINTLN("Mouse moved - pos: (x: %f, y: %f) delta: (dX: %f, dY: %f)", mouseState.posX, mouseState.posY, mouseState.posDeltaX, mouseState.posDeltaY);
+        }
+        
+        // Check if mouse scrolled
+        if (mouseState.scrollDeltaX != 0.0 || mouseState.scrollDeltaY != 0.0) {
+            DEBUG_PRINTLN("Mouse scrolled - delta: (dX: %f, dY: %f)", mouseState.scrollDeltaX, mouseState.scrollDeltaY);
+        }
 
-		case KeyCode::Up:
-			camZ += 10 * deltaTime;
-			break;
-		}
+        // Check if buttons are pressed
+        if (lastMouseState.leftButton == MouseButtonState::RELEASED && mouseState.leftButton == MouseButtonState::PRESSED) {
+            DEBUG_PRINTLN("Mouse left button pressed");
+        }
+        if (lastMouseState.centerButton == MouseButtonState::RELEASED && mouseState.centerButton == MouseButtonState::PRESSED) {
+            DEBUG_PRINTLN("Mouse center button pressed");
+        }
+        if (lastMouseState.rightButton == MouseButtonState::RELEASED && mouseState.rightButton == MouseButtonState::PRESSED) {
+            DEBUG_PRINTLN("Mouse right button pressed");
+        }
 
-		});
-	app.addInputHandler(&keyboard);
+        // Check if buttons are released
+        if (lastMouseState.leftButton == MouseButtonState::PRESSED && mouseState.leftButton == MouseButtonState::RELEASED) {
+            DEBUG_PRINTLN("Mouse left button released");
+        }
+        if (lastMouseState.centerButton == MouseButtonState::PRESSED && mouseState.centerButton == MouseButtonState::RELEASED) {
+            DEBUG_PRINTLN("Mouse center button released");
+        }
+        if (lastMouseState.rightButton == MouseButtonState::PRESSED && mouseState.rightButton == MouseButtonState::RELEASED) {
+            DEBUG_PRINTLN("Mouse right button released");
+        }
 
-	// NOTE: Both Image and Mesh classes can use textures loaded from JPG, PNG, or BMP.
-	//       All PNG files have been run through pngcrush.
-	//
-	//       I have not yet done profiling to determine the performance and memory 
-	//       implications of using each file format. However keep in mind that only PNG
-	//       fully supports RGBA as the others do not have alpha channels. The below test
-	//       code demostrates loading all 3 types. You can also change the extensions to 
-	//       try the other formats yourself for testing/profiling. 
-	//
-	//       In my limited testing with dcload only, the file size seems to have a much larger
-	//       impact on loading time than the format. So I found JPG files load significantly
-	//       faster than either PNG or BMP with no noticeable loss in quality (though no alpha).
+        // Store last state
+        lastMouseState = mouseState;
+    });
+    app.addInputHandler(std::shared_ptr<MouseInputHandler>(&mouse));
 
-	Texture grayBrickTexture;
-	grayBrickTexture.loadRGB("images/gray_brick_512.jpg");
-	Image grayBrickImage(&grayBrickTexture, 0, (float)app.windowHeight(), Image::Z_BACKGROUND, (float)app.windowWidth(), (float)app.windowHeight(), app.screenScale);
+    // Basic gamepad handling
+    GamepadState lastGamepad1State;
+    GamepadInputHandler gamepad1(GamepadIndex::FIRST);
+    gamepad1.registerRawStateCallback([&lastGamepad1State](GamepadState gamepadState) {
+        // Check if buttons are pressed
+        if (lastGamepad1State.buttons[GamepadButton::A] == GamepadButtonState::RELEASED && gamepadState.buttons[GamepadButton::A] == GamepadButtonState::PRESSED) {
+            DEBUG_PRINTLN("A pressed");
+        }
+        if (lastGamepad1State.buttons[GamepadButton::B] == GamepadButtonState::RELEASED && gamepadState.buttons[GamepadButton::B] == GamepadButtonState::PRESSED) {
+            DEBUG_PRINTLN("B pressed");
+        }
+        if (lastGamepad1State.buttons[GamepadButton::X] == GamepadButtonState::RELEASED && gamepadState.buttons[GamepadButton::X] == GamepadButtonState::PRESSED) {
+            DEBUG_PRINTLN("X pressed");
+        }
+        if (lastGamepad1State.buttons[GamepadButton::Y] == GamepadButtonState::RELEASED && gamepadState.buttons[GamepadButton::Y] == GamepadButtonState::PRESSED) {
+            DEBUG_PRINTLN("Y pressed");
+        }
+        if (lastGamepad1State.buttons[GamepadButton::START] == GamepadButtonState::RELEASED && gamepadState.buttons[GamepadButton::START] == GamepadButtonState::PRESSED) {
+            DEBUG_PRINTLN("Start pressed");
+        }
+        if (lastGamepad1State.buttons[GamepadButton::L_SHOULDER] == GamepadButtonState::RELEASED && gamepadState.buttons[GamepadButton::L_SHOULDER] == GamepadButtonState::PRESSED) {
+            DEBUG_PRINTLN("Left Shoulder pressed");
+        }
+        if (lastGamepad1State.buttons[GamepadButton::R_SHOULDER] == GamepadButtonState::RELEASED && gamepadState.buttons[GamepadButton::R_SHOULDER] == GamepadButtonState::PRESSED) {
+            DEBUG_PRINTLN("Right Shoulder pressed");
+        }
+        if (lastGamepad1State.buttons[GamepadButton::L_STICK] == GamepadButtonState::RELEASED && gamepadState.buttons[GamepadButton::L_STICK] == GamepadButtonState::PRESSED) {
+            DEBUG_PRINTLN("Left Stick pressed");
+        }
+        if (lastGamepad1State.buttons[GamepadButton::R_STICK] == GamepadButtonState::RELEASED && gamepadState.buttons[GamepadButton::R_STICK] == GamepadButtonState::PRESSED) {
+            DEBUG_PRINTLN("Right Stick pressed");
+        }
 
-	Texture woodTexture;
-	woodTexture.loadRGB("images/wood1.bmp");
-	Image woodImage(&woodTexture, 250, 420, 10, Image::Z_HUD, 100, app.screenScale);
+        // Check if buttons are released
+        if (lastGamepad1State.buttons[GamepadButton::A] == GamepadButtonState::PRESSED && gamepadState.buttons[GamepadButton::A] == GamepadButtonState::RELEASED) {
+            DEBUG_PRINTLN("A released");
+        }
+        if (lastGamepad1State.buttons[GamepadButton::B] == GamepadButtonState::PRESSED && gamepadState.buttons[GamepadButton::B] == GamepadButtonState::RELEASED) {
+            DEBUG_PRINTLN("B released");
+        }
+        if (lastGamepad1State.buttons[GamepadButton::X] == GamepadButtonState::PRESSED && gamepadState.buttons[GamepadButton::X] == GamepadButtonState::RELEASED) {
+            DEBUG_PRINTLN("X released");
+        }
+        if (lastGamepad1State.buttons[GamepadButton::Y] == GamepadButtonState::PRESSED && gamepadState.buttons[GamepadButton::Y] == GamepadButtonState::RELEASED) {
+            DEBUG_PRINTLN("Y released");
+        }
+        if (lastGamepad1State.buttons[GamepadButton::START] == GamepadButtonState::PRESSED && gamepadState.buttons[GamepadButton::START] == GamepadButtonState::RELEASED) {
+            DEBUG_PRINTLN("Start released");
+        }
+        if (lastGamepad1State.buttons[GamepadButton::L_SHOULDER] == GamepadButtonState::PRESSED && gamepadState.buttons[GamepadButton::L_SHOULDER] == GamepadButtonState::RELEASED) {
+            DEBUG_PRINTLN("Left Shoulder released");
+        }
+        if (lastGamepad1State.buttons[GamepadButton::R_SHOULDER] == GamepadButtonState::PRESSED && gamepadState.buttons[GamepadButton::R_SHOULDER] == GamepadButtonState::RELEASED) {
+            DEBUG_PRINTLN("Right Shoulder released");
+        }
+        if (lastGamepad1State.buttons[GamepadButton::L_STICK] == GamepadButtonState::PRESSED && gamepadState.buttons[GamepadButton::L_STICK] == GamepadButtonState::RELEASED) {
+            DEBUG_PRINTLN("Left Stick released");
+        }
+        if (lastGamepad1State.buttons[GamepadButton::R_STICK] == GamepadButtonState::PRESSED && gamepadState.buttons[GamepadButton::R_STICK] == GamepadButtonState::RELEASED) {
+            DEBUG_PRINTLN("Right Stick released");
+        }
 
-	MeshData* houseMesh = MeshLoader::loadObjMesh("meshes/house.obj");
-	Texture houseTexture;
-	houseTexture.loadRGBA("images/house_512.png");
-	Mesh mesh(houseMesh, &houseTexture, 0.3f);
+        // Check if dpad directions are pressed
+        if (lastGamepad1State.buttons[GamepadButton::DPAD_DOWN] == GamepadButtonState::RELEASED && gamepadState.buttons[GamepadButton::DPAD_DOWN] == GamepadButtonState::PRESSED) {
+            DEBUG_PRINTLN("DPAD Down pressed");
+        }
+        if (lastGamepad1State.buttons[GamepadButton::DPAD_LEFT] == GamepadButtonState::RELEASED && gamepadState.buttons[GamepadButton::DPAD_LEFT] == GamepadButtonState::PRESSED) {
+            DEBUG_PRINTLN("DPAD Left pressed");
+        }
+        if (lastGamepad1State.buttons[GamepadButton::DPAD_RIGHT] == GamepadButtonState::RELEASED && gamepadState.buttons[GamepadButton::DPAD_RIGHT] == GamepadButtonState::PRESSED) {
+            DEBUG_PRINTLN("DPAD Right pressed");
+        }
+        if (lastGamepad1State.buttons[GamepadButton::DPAD_UP] == GamepadButtonState::RELEASED && gamepadState.buttons[GamepadButton::DPAD_UP] == GamepadButtonState::PRESSED) {
+            DEBUG_PRINTLN("DPAD Up pressed");
+        }
 
-	FontColor darkBlue{ 21, 1, 148 };
-	FontFace fontFace = app.screenScale > 1.0 ? FontFace::arial_28 : FontFace::arial_16;
-	Text fpsCounter(fontFace, "", darkBlue, 20, 20, Image::Z_HUD, app.screenScale);
-	fpsCounter.createTexture();
+        // Check if dpad directions are released
+        if (lastGamepad1State.buttons[GamepadButton::DPAD_DOWN] == GamepadButtonState::PRESSED && gamepadState.buttons[GamepadButton::DPAD_DOWN] == GamepadButtonState::RELEASED) {
+            DEBUG_PRINTLN("DPAD Down released");
+        }
+        if (lastGamepad1State.buttons[GamepadButton::DPAD_LEFT] == GamepadButtonState::PRESSED && gamepadState.buttons[GamepadButton::DPAD_LEFT] == GamepadButtonState::RELEASED) {
+            DEBUG_PRINTLN("DPAD Left released");
+        }
+        if (lastGamepad1State.buttons[GamepadButton::DPAD_RIGHT] == GamepadButtonState::PRESSED && gamepadState.buttons[GamepadButton::DPAD_RIGHT] == GamepadButtonState::RELEASED) {
+            DEBUG_PRINTLN("DPAD Right released");
+        }
+        if (lastGamepad1State.buttons[GamepadButton::DPAD_UP] == GamepadButtonState::PRESSED && gamepadState.buttons[GamepadButton::DPAD_UP] == GamepadButtonState::RELEASED) {
+            DEBUG_PRINTLN("DPAD Up released");
+        }
 
-	// Main loop
-	while (!app.windowShouldClose()) {
-		// Measure speed
-		nbFrames++;
-		currentTime = std::chrono::steady_clock::now();
-		timeDiff = (uint16_t)std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - lastTime).count();
-		if (timeDiff >= 1000) {
-			frameTime = float(timeDiff) / float(nbFrames);
-			deltaTime = frameTime * 0.001f;
-			fps = nbFrames;
-			nbFrames = 0;
-			lastTime = currentTime;
-		}
+        // Check analog sticks and triggers
+        if (lastGamepad1State.analog[GamepadAnalog::L_STICK_X] != gamepadState.analog[GamepadAnalog::L_STICK_X] || lastGamepad1State.analog[GamepadAnalog::L_STICK_Y] != gamepadState.analog[GamepadAnalog::L_STICK_Y]) {
+            DEBUG_PRINTLN("Left Stick: (x: %f, y: %f)", gamepadState.analog[GamepadAnalog::L_STICK_X], gamepadState.analog[GamepadAnalog::L_STICK_Y]);
+        }
+         if (lastGamepad1State.analog[GamepadAnalog::R_STICK_X] != gamepadState.analog[GamepadAnalog::R_STICK_X] || lastGamepad1State.analog[GamepadAnalog::R_STICK_Y] != gamepadState.analog[GamepadAnalog::R_STICK_Y]) {
+            DEBUG_PRINTLN("Right Stick: (x: %f, y: %f)", gamepadState.analog[GamepadAnalog::R_STICK_X], gamepadState.analog[GamepadAnalog::R_STICK_Y]);
+        }
+        if (lastGamepad1State.analog[GamepadAnalog::L_TRIGGER] != gamepadState.analog[GamepadAnalog::L_TRIGGER]) {
+            DEBUG_PRINTLN("Left Trigger: %f", gamepadState.analog[GamepadAnalog::L_TRIGGER]);
+        }
+        if (lastGamepad1State.analog[GamepadAnalog::R_TRIGGER] != gamepadState.analog[GamepadAnalog::R_TRIGGER]) {
+            DEBUG_PRINTLN("Right Trigger: %f", gamepadState.analog[GamepadAnalog::R_TRIGGER]);
+        }
 
-		// Handle input
-		app.handleInput();
+        // Store last state
+        lastGamepad1State = gamepadState;
+    });
+    app.addInputHandler(std::shared_ptr<GamepadInputHandler>(&gamepad1));
 
-		// Clear the buffer to draw the prepare frame
-		app.clear();
+    // NOTE: Both Image and Mesh classes can use textures loaded from JPG, PNG, or BMP.
+    //       All PNG files have been run through pngcrush.
+    //
+    //       I have not yet done profiling to determine the performance and memory 
+    //       implications of using each file format. However keep in mind that only PNG
+    //       fully supports RGBA as the others do not have alpha channels. The below test
+    //       code demostrates loading all 3 types. You can also change the extensions to 
+    //       try the other formats yourself for testing/profiling. 
+    //
+    //       In my limited testing with dcload only, the file size seems to have a much larger
+    //       impact on loading time than the format. So I found JPG files load significantly
+    //       faster than either PNG or BMP with no noticeable loss in quality (though no alpha).
 
-		// Draw the background image
-		app.reshapeOrtho(1.0);
-		grayBrickImage.draw();
+    Texture grayBrickTexture;
+    grayBrickTexture.loadRGB("images/gray_brick_512.jpg");
+    Image grayBrickImage(&grayBrickTexture, 0, (float)app.windowHeight(), Image::Z_BACKGROUND, (float)app.windowWidth(), (float)app.windowHeight(), app.screenScale);
 
-		// Draw the 3d rotating house
-		app.reshapeFrustum();
-		app.translateFrustum(0.5f, 0.5f, camZ);
-		mesh.draw();
-		mesh.rotationX += 0.75;
-		mesh.rotationY += 0.75;
-		mesh.rotationZ += 0.75;
+    Texture woodTexture;
+    woodTexture.loadRGB("images/wood1.bmp");
+    Image woodImage(&woodTexture, 250, 420, 10, Image::Z_HUD, 100, app.screenScale);
 
-		// Draw the foreground 2d image
-		app.reshapeOrtho(1.0);
-		woodImage.draw();
+    MeshData *houseMesh = MeshLoader::loadObjMesh("meshes/house.obj");
+    Texture houseTexture;
+    houseTexture.loadRGBA("images/house_512.png");
+    Mesh mesh(houseMesh, &houseTexture, 0.3f);
 
-		// Draw the FPS counter HUD text
-		app.reshapeOrtho(fpsCounter.scale);
-		static char outputString[50];
-		// NOTE: Due to an old GCC bug, we must manually cast floats to double in order to use %f without a warning 
-		snprintf(&outputString[0], 50, "frame time: %.2f ms  fps: %.2f  key: %d", (double)frameTime, (double)fps, lastKeyCode);
-		fpsCounter.text = outputString;
-		fpsCounter.draw();
+    FontColor darkBlue{21, 1, 148};
+    FontFace fontFace = app.screenScale > 1.0 ? FontFace::arial_28 : FontFace::arial_16;
+    Text fpsCounter(fontFace, "", darkBlue, 20, 20, Image::Z_HUD, app.screenScale);
+    fpsCounter.createTexture();
 
-		// Swap buffers to display the current frame
-		app.swapBuffers();
-	}
+    // Main loop
+    while (!app.windowShouldClose()) {
+        // Measure speed
+        nbFrames++;
+        currentTime = std::chrono::steady_clock::now();
+        timeDiff = (uint16_t)std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - lastTime).count();
+        if (timeDiff >= 1000) {
+            frameTime = float(timeDiff) / float(nbFrames);
+            fps = nbFrames;
+            nbFrames = 0;
+            lastTime = currentTime;
+        }
 
-	// TODO: Do any possible cleanups here
+        // Handle input
+        app.handleInput();
 
-	app.closeWindow();
+        // Clear the buffer to draw the prepare frame
+        app.clear();
+
+        // Draw the background image
+        app.reshapeOrtho(1.0);        
+        grayBrickImage.draw();
+
+        // Draw the 3d rotating house
+        app.reshapeFrustum();
+        mesh.draw();
+        mesh.rotationX += 0.75;
+        mesh.rotationY += 0.75;
+        mesh.rotationZ += 0.75;
+
+        // Draw the foreground 2d image
+        app.reshapeOrtho(1.0);
+        woodImage.draw();
+
+        // Draw the FPS counter HUD text
+        app.reshapeOrtho(fpsCounter.scale);
+        static char outputString[50];
+        // NOTE: Due to an old GCC bug, we must manually cast floats to double in order to use %f without a warning 
+        snprintf(&outputString[0], 50, "frame time: %.2f ms  fps: %.2f  key: %d", (double)frameTime, (double)fps, lastKeyCode);
+        fpsCounter.text = outputString;
+        fpsCounter.draw();
+
+        // Swap buffers to display the current frame
+        app.swapBuffers();
+    }
+
+    app.closeWindow();
 }
